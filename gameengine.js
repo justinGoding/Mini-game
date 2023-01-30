@@ -10,9 +10,12 @@ class GameEngine {
         this.entities = [];
         this.entity_map = new Map([
             ["player", []],
-            ["enemy", []],
-            ["sword", []],
+            ["tile", []],
+            ["ethereal", []],
+            ["kinematic", []],
         ]);
+        this.new_block_time = 1;
+        this.has_ethereal = false;
 
         // Information on the input
         this.click = null;
@@ -24,8 +27,6 @@ class GameEngine {
         this.options = options || {
             debugging: false,
         };
-
-        this.gravity = false;
     };
 
     init(ctx) {
@@ -95,6 +96,9 @@ class GameEngine {
                 this.entity_map.get(entity.tag).push(entity);
             }
         }
+        if (entity.kinematic !== undefined) {
+            this.entity_map.get("kinematic").push(entity);
+        }
     };
 
     draw() {
@@ -130,6 +134,7 @@ class GameEngine {
             }
         }
 
+        this.s_blocks();
         physics(this.entity_map);
     };
 
@@ -140,6 +145,14 @@ class GameEngine {
 
         this.click = null;
     };
+
+    s_blocks() {
+        if (this.timer.gameTime >= this.new_block_time && !this.has_ethereal)
+        {
+            this.addEntity(new Ethereal_Block());
+            this.has_ethereal = true;
+        }
+    }
 
 };
 

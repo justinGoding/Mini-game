@@ -8,10 +8,8 @@ class Pangolin{
         this.transform = new Transform(new Vec2(16, 32), new Vec2(0,0), 1, new Vec2(0,0));
         this.health = new Health(3, 3);
         this.collider = new Collider(new AABB(this.transform.pos, 8, 8), true, true, false);
-        this.knockback = new Knockback();
-        this.invincible = new Invincible();
-        this.gravity = new Gravity();
         this.shadow = new Shadow(this.game, this.transform.pos);
+        this.kinematic = new Kinematic(1, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.01)
 
         // Reference to our spritesheet
         this.walk_spritesheet = ASSET_MANAGER.getAsset("./sprites/pangolin_sheet.png");
@@ -43,6 +41,7 @@ class Pangolin{
         // Flag variables
         
         this.rolling = false;
+        this.air = true;
 
         // Animations
         this.animations = [];
@@ -184,102 +183,15 @@ class Pangolin{
     update(){
     
         console.log(this.state);
-
-        if(this.invincible.active){
-            invulnerability_active(this);
-        }
-        this.check_input();
         this.check_animation_end();
-        this.movement();
-        // top down jump
-        if(!gameEngine.gravity && this.state == state_enum.jumping){
-            this.jump_path();
-        }
+        this.movement(); 
     }
 
     draw(ctx){
         if(document.getElementById("debug").checked){
             draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 16, 16, false, true, 1);
         }
-        this.animations[this.state][this.facing][this.rolling ? 1 : 0].drawFrame(this.game.clockTick, ctx, this.transform.pos.x, this.transform.pos.y - this.z, 16, 16, this.invincible.inverted);
-    }
-
-    jump(){
-        this.state = state_enum.jumping;
-        if(gameEngine.gravity){
-            this.gravity.velocity = -2;
-            this.grounded = false;
-        }
-    }
-
-    jump_path(){
-        console.log("We jumped");
-        switch(this.facing){
-            case 0:
-                this.transform.velocity.x = this.jump_speed * this.game.clockTick;
-                break;
-            case 1:
-                this.transform.velocity.x = -(this.jump_speed * this.game.clockTick)
-                break;
-            case 2:
-                this.transform.velocity.y = -this.jump_speed * this.game.clockTick;
-                break;
-            case 3:
-                this.transform.velocity.y = (this.jump_speed * this.game.clockTick)
-                break;
-                    
-        }
-        this.distance_remaining = Math.max(0, this.distance_remaining - this.jump_time * gameEngine.clockTick);
-        this.z = Math.sin(((this.distance_remaining / this.jump_distance) * Math.PI)) * this.jump_height;
-        console.log("z", this.z);   
-    }
-
-    // ----------- This section is dedicated to checking for specific key presses in order to change states ---- //
-    // -----------  we do not actually change states here, just set booleans. I.e. "attacking" ------------------ //
-    check_input(){
-        // Rolling transition check
-        if(this.game.keys["r"] && this.game.timer.gameTime >= this.roll_cooldown_end){
-            this.rolling = !this.rolling;
-            this.roll_cooldown_end = this.game.timer.gameTime + this.animations[state_enum.walking][0][this.rolling ? 1 : 0].totalTime;
-        }
-
-        //Jump check
-        if(this.game.keys[" "] && this.game.timer.gameTime >= this.jump_cooldown_end && this.state != state_enum.jumping){ //Pressing space
-            this.jump();
-            this.shadow.visible = true;
-            this.distance_remaining = this.jump_distance;
-            this.jump_cooldown_end = this.game.timer.gameTime + this.animations[state_enum.jumping][0][this.rolling ? 1 : 0].totalTime;
-        }
-
-        
-
-        // Sword slash check
-        if(this.game.click && this.game.timer.gameTime >= this.attack_end_time){
-            // Figure out which direction we are slashing in
-            if(Math.abs( this.game.click.x - convertToScreenPos(this.transform.pos.x, 0).x ) > Math.abs( this.game.click.y - convertToScreenPos(0, this.transform.pos.y).y )){// X is farther
-                if( this.game.click.x > convertToScreenPos(this.transform.pos.x, 0).x){
-                    this.facing = 0;
-                }
-                else if( this.game.click.x < convertToScreenPos(this.transform.pos.x, 0).x){
-                    this.facing = 1;
-                }
-            }
-            else{
-                if( this.game.click.y < convertToScreenPos(0, this.transform.pos.y).y ){
-                    this.facing = 2;
-                }
-                else if( this.game.click.y > convertToScreenPos(0, this.transform.pos.y).y){
-                    this.facing = 3;
-                }
-            }
-
-            // Initiate the sword slash
-            this.state = state_enum.slashing;
-            this.rolling = false;
-            let sword = new Sword(this.game, this.facing, this.transform.pos, this);
-            this.game.addEntity(sword);
-            this.attack_end_time = this.game.timer.gameTime + this.animations[state_enum.slashing][0][this.rolling ? 1 : 0].totalTime;
-        }
+        this.animations[this.state][this.facing][this.rolling ? 1 : 0].drawFrame(this.game.clockTick, ctx, this.transform.pos.x, this.transform.pos.y - this.z, 16, 16);
     }
 
     // ----------- This section is dedicated for seeing if we have finished an animation ---- //
@@ -314,18 +226,14 @@ class Pangolin{
     }
 
     movement(){
-        this.transform.velocity.x = 0;
-        this.transform.velocity.y = 0;
 
-        if(this.state !== state_enum.slashing && !this.knockback.active){
-            this.transform.velocity.x = ((-(this.game.keys["a"] ? 1: 0) + (this.game.keys["d"] ? 1: 0)) * (this.rolling ? this.roll_speed : this.walk_speed) *this.game.clockTick);
-            this.transform.velocity.y = ((-(this.game.keys["w"] ? 1: 0) + (this.game.keys["s"] ? 1: 0)) * (this.rolling ? this.roll_speed : this.walk_speed)*this.game.clockTick);
-        }
-        else if (this.knockback.active){
-            knockback(this);
-        }
-        
+        this.transform.velocity.x += ((-(this.game.keys["a"] ? 5: 0) + (this.game.keys["d"] ? 5: 0)) * this.walk_speed * gameEngine.clockTick);
 
+        if(this.game.keys[" "] && !this.air){
+            this.air = true;
+            this.transform.velocity.y -= 100;
+        }
+      
         // Figure out the direction for animation
         if(this.transform.velocity.x > 0){ // Facing right
             this.facing = 0;
@@ -333,14 +241,11 @@ class Pangolin{
         else if (this.transform.velocity.x < 0){ // Facing left
             this.facing = 1;
         }
-        if (this.transform.velocity.y < 0){ // Facing up
-            this.facing = 2;
-        }
         else if (this.transform.velocity.y > 0){ // Facing down
             this.facing = 3;
         }
 
-        if(this.state != state_enum.jumping && this.state != state_enum.slashing){
+        if(this.state != state_enum.jumping){
             if (this.transform.velocity.x == 0 && this.transform.velocity.y == 0){
                 this.state = state_enum.idle; // idle state
             }
@@ -348,16 +253,6 @@ class Pangolin{
                 this.state = state_enum.walking; // moving state
             }
         }
-
-        // Adjust where our actual game object is located in the world. -- //
-
-        this.transform.velocity.y += this.gravity.velocity;
-        // Adjust position from velocity
-        this.transform.prev_pos.x = this.transform.pos.x;
-        this.transform.prev_pos.y = this.transform.pos.y
-        this.transform.pos.x += this.transform.velocity.x;
-        this.transform.pos.y += this.transform.velocity.y; 
-        
     }
 }
 

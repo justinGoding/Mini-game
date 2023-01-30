@@ -21,7 +21,7 @@ ASSET_MANAGER.downloadAll(() => {
 
 	gameEngine.init(ctx);
 
-	new sceneManager(gameEngine);
+	gameEngine.addEntity(new Pangolin());
 
 	gameEngine.start();
 

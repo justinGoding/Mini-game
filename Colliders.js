@@ -1,10 +1,3 @@
-const _GRAVITY_ACCELERATION = 980;
-const _AIR_DENSITY = .00123;
-const _DRAG_COEFFICIENT = 0.06;
-const _WIND_SPEED = 0;
-const _GROUND_PLANE = 730;
-const _RESTITUTION = 0.2;
-
 class Particle {
     constructor(kinematic = false) {
         this.kinematic = kinematic;
