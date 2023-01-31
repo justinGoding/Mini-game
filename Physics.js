@@ -62,7 +62,7 @@ function prevent_overlap(a, b) {
     let prev_overlap = get_AABBAABB_overlap(a.collider.area, b.collider.area, a.transform.prev_pos, b.transform.prev_pos);
 
     // If the overlap is horizontal
-    if (prev_overlap.y > 0.01) {
+    if (prev_overlap.y > prev_overlap.x) {
         // If a is on the left push a to the left and b to the right
         if (a.transform.pos.x < b.transform.pos.x) {
             a.transform.pos.x -= overlap.x;
@@ -74,7 +74,7 @@ function prevent_overlap(a, b) {
         a.transform.velocity.x = 0;
     }
     // If the overlap is vertical
-    else if (prev_overlap.x > 0.01) {
+    else if (prev_overlap.x > prev_overlap.y) {
         // If a is above, push a up and b down
         if (a.transform.pos.y < b.transform.pos.y) {
             a.transform.pos.y -= overlap.y;
