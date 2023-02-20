@@ -7,9 +7,10 @@ class Pangolin{
         this.tag = "player";
         this.transform = new Transform(new Vec2(16, 32), new Vec2(0,0), 1, new Vec2(0,0));
         this.health = new Health(3, 3);
-        this.collider = new Collider(new AABB(this.transform.pos, 8, 8), true, true, false);
+        this.collider = new Collider(new Circle(this.transform.pos, 7.5), true, true, false);
         this.shadow = new Shadow(this.game, this.transform.pos);
-        this.kinematic = new Kinematic(1, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.01)
+        this.gravity = new Gravity();
+        //this.kinematic = new Kinematic(1, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.01)
 
         // Reference to our spritesheet
         this.walk_spritesheet = ASSET_MANAGER.getAsset("./sprites/pangolin_sheet.png");
@@ -21,8 +22,10 @@ class Pangolin{
         this.dead = false;
 
         // Some movement variables
-        this.walk_speed = 12.5;
-        this.roll_speed = 50;
+        this.acceleration = 280;
+        this.max_speed = 100;
+        this.min_speed = .3;
+        this.cr = 0;
 
         // Jump variables
         this.jump_speed = 53;
@@ -34,8 +37,6 @@ class Pangolin{
         this.grounded = true;
 
         // State change variables
-        this.roll_cooldown_end = 0;
-        this.attack_end_time = 0;
         this.jump_cooldown_end = 0;
 
         // Flag variables
@@ -188,9 +189,6 @@ class Pangolin{
     }
 
     draw(ctx){
-        if(document.getElementById("debug").checked){
-            draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 16, 16, false, true, 1);
-        }
         this.animations[this.state][this.facing][this.rolling ? 1 : 0].drawFrame(this.game.clockTick, ctx, this.transform.pos.x, this.transform.pos.y - this.z, 16, 16);
     }
 
@@ -227,11 +225,30 @@ class Pangolin{
 
     movement(){
 
-        this.transform.velocity.x += ((-(this.game.keys["a"] ? 5: 0) + (this.game.keys["d"] ? 5: 0)) * this.walk_speed * gameEngine.clockTick);
+        if (this.game.keys['a']) {
+            this.transform.velocity.x -= this.acceleration * gameEngine.clockTick;
+        }
+        else if (this.game.keys["d"]) {
+            this.transform.velocity.x += this.acceleration * gameEngine.clockTick;
+        }
+        if (this.game.keys["w"]) {
+            this.transform.velocity.y -= this.acceleration * gameEngine.clockTick;
+        }
+        else if (this.game.keys["s"]) {
+            this.transform.velocity.y += this.acceleration * gameEngine.clockTick;
+        }
+
+        let speed = Math.abs(this.transform.velocity.x);
+        if (speed > this.max_speed) {
+            this.transform.velocity.x *= this.max_speed / speed;
+        }
+        else if (speed < this.min_speed) {
+            this.transform.velocity.x = 0;
+        }
 
         if(this.game.keys[" "] && !this.air){
             this.air = true;
-            this.transform.velocity.y -= 100;
+            this.transform.velocity.y = -150;
         }
       
         // Figure out the direction for animation
@@ -253,6 +270,8 @@ class Pangolin{
                 this.state = state_enum.walking; // moving state
             }
         }
+
+        this.air = true;
     }
 }
 

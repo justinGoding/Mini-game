@@ -61,6 +61,13 @@ class Invincible{
 
 }
 
+
+class Gravity {
+    constructor() {
+        this.velocity = 0.0;
+    }
+}
+
 class Kinematic {
     constructor(mass, pos, prev_pos, velocity, _DRAG_COEFFICIENT = 0.06, _RESTITUTION = 0.01) {
         this.f_mass = mass;                         // Total mass                                   

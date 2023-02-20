@@ -6,6 +6,8 @@ class Ethereal_Block{
     constructor(){
         this.tag = "ethereal";
         this.transform = new Transform(new Vec2(gameEngine.mouse.x, gameEngine.mouse.y));
+        this.cr = 0;
+        this.prev_pos = new Vec2();
 
         let key = Math.floor(Math.random() * 3 + 1);
         let block_shape = block_shapes[key];
@@ -15,7 +17,11 @@ class Ethereal_Block{
     movement() {
         let pos = this.transform.pos;
         let collider = this.collider.area;
-        let mouse_pos = convertToGamePos(gameEngine.mouse.x, gameEngine.mouse.y);
+        let mouse_pos = new Vec2();
+        if (gameEngine.mouse != null) {
+            mouse_pos = convertToGamePos(gameEngine.mouse.x, gameEngine.mouse.y);
+        }
+        this.prev_pos = pos.clone();
         pos.x = mouse_pos.x
         pos.y = mouse_pos.y;
 
@@ -31,6 +37,7 @@ class Ethereal_Block{
         {
             pos.x = collider.half.x;
         }
+ 
     }
 
     input() {
@@ -55,12 +62,22 @@ class Block{
     constructor(ethereal){
         this.tag = "tile";
         this.transform = ethereal.transform;
+        this.transform.velocity = Vec2.scale(Vec2.diff(this.transform.pos, this.transform.prev_pos), 1/gameEngine.clockTick);
         this.collider = ethereal.collider;
-        this.kinematic = new Kinematic(10, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.3);
+        this.gravity = new Gravity();
+        this.max_speed = 100;
+        this.min_speed = 0.3;
+        //this.kinematic = new Kinematic(10, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.3);
     }
 
     update(){
-
+        let speed = Math.abs(this.transform.velocity.x);
+        if (speed > this.max_speed) {
+            this.transform.velocity.x *= this.max_speed / speed;
+        }
+        else if (speed < this.min_speed) {
+            this.transform.velocity.x = 0;
+        }
     }
 
     draw(ctx){
