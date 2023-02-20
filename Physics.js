@@ -522,6 +522,8 @@ function collision_bounce(entity, normal, cr, impact_entity) {
     let mass2 = impact_entity.mass !== undefined ? impact_entity.mass : 1;
     let relative_velocity = Vec2.diff(entity.transform.velocity, impact_entity.transform.velocity);
 
+    if (relative_velocity.x > 0 && relative_velocity.y > 0) { return; }
+    
     let j = ( -(1+cr) * (relative_velocity.dot(normal)) ) / ( (normal.dot(normal)) * (1 / mass1 + 1 / mass2) );
 
     let impulse = Vec2.scale(normal, j / mass1);
