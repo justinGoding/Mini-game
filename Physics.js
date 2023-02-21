@@ -206,26 +206,33 @@ function ethereal_collisions(entities) {
         physicals = physicals.concat(entities.get("tile"));
     }
 
-    for (let ethereal of ethereals) {
-        for (let physical of physicals) {
+    loop1: for (let ethereal of ethereals) {
+        loop2: for (let physical of physicals) {
             if(test_overlap(ethereal.collider.area, physical.collider.area)) {
 
                 let saved_pos = ethereal.transform.pos.clone();
                 ethereal.transform.pos.x = ethereal.prev_pos.x;
-                if (!test_overlap(ethereal.collider.area, physical.collider.area)) {
-                    break;
-                }
-
-                ethereal.transform.pos.x = saved_pos.x;
-                ethereal.transform.pos.y = ethereal.prev_pos.y;
-                if (!test_overlap(ethereal.collider.area, physical.collider.area)) {
-                    break;
-                }
-
-                ethereal.transform.pos.x = ethereal.prev_pos.x;
-
                 if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-                    ethereal.collider.area.center.add(Vec2.scale(physical.transform.velocity, gameEngine.clockTick));
+                    
+                    ethereal.transform.pos.x = saved_pos.x;
+                    ethereal.transform.pos.y = ethereal.prev_pos.y;
+                    if (test_overlap(ethereal.collider.area, physical.collider.area)) {
+
+                        ethereal.transform.pos.x = ethereal.prev_pos.x;
+                        if (test_overlap(ethereal.collider.area, physical.collider.area)) {
+
+                            ethereal.transform.pos.x = saved_pos.x;
+                            ethereal.transform.pos.y = saved_pos.y;
+
+                            if (test_overlap(ethereal.collider.area, physical.collider.area)) {
+                                ethereal.collider.area.center.add(Vec2.scale(physical.transform.velocity, gameEngine.clockTick));
+                            }
+
+                            if(test_overlap(ethereal.collider.area, physical.collider.area)) {
+                                ethereal.collider.area.center.set(1000, -1000);
+                            }
+                        }
+                    }   
                 }
             }
         }
@@ -566,6 +573,8 @@ function collision_bounce(entity, normal, cr, impact_entity) {
     if (Math.abs(impulse.x) < 0.5 && Math.abs(impulse.y) < 0.5) { return; }
 
     entity.transform.velocity.add(impulse);
+
+    impulse = Vec2.scale(normal, j / mass2);
     impact_entity.transform.velocity.minus(impulse);
     
 

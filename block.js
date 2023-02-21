@@ -10,6 +10,7 @@ class Ethereal_Block{
             this.transform = new Transform(new Vec2(gameEngine.mouse.x, gameEngine.mouse.y));
         }
         this.cr = 0;
+        this.mass = 0.0000001
         this.prev_pos = new Vec2();
 
         let key = Math.floor(Math.random() * 3 + 1);
