@@ -58,8 +58,8 @@ class Ethereal_Block{
         }
     }
     update(){
-        this.input();
         this.movement();
+        this.input();
     }
 
     draw(ctx){
@@ -75,11 +75,11 @@ class Block{
     constructor(ethereal){
         this.tag = "tile";
         this.transform = ethereal.transform;
-        this.transform.velocity = Vec2.scale(Vec2.diff(this.transform.pos, this.transform.prev_pos), 1/gameEngine.clockTick);
+        this.transform.velocity = Vec2.scale(Vec2.diff(this.transform.pos, ethereal.prev_pos), 1/gameEngine.clockTick);
         this.movement();
         this.collider = ethereal.collider;
         this.gravity = new Gravity();
-        this.max_speed = 100;
+        this.max_speed = 300;
         this.min_speed = 0.3;
         
         this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
