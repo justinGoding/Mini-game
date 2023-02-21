@@ -206,35 +206,9 @@ function ethereal_collisions(entities) {
         physicals = physicals.concat(entities.get("tile"));
     }
 
-    loop1: for (let ethereal of ethereals) {
-        loop2: for (let physical of physicals) {
-            if(test_overlap(ethereal.collider.area, physical.collider.area)) {
-
-                let saved_pos = ethereal.transform.pos.clone();
-                ethereal.transform.pos.x = ethereal.prev_pos.x;
-                if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-                    
-                    ethereal.transform.pos.x = saved_pos.x;
-                    ethereal.transform.pos.y = ethereal.prev_pos.y;
-                    if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-
-                        ethereal.transform.pos.x = ethereal.prev_pos.x;
-                        if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-
-                            ethereal.transform.pos.x = saved_pos.x;
-                            ethereal.transform.pos.y = saved_pos.y;
-
-                            if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-                                ethereal.collider.area.center.add(Vec2.scale(physical.transform.velocity, gameEngine.clockTick));
-                            }
-
-                            if(test_overlap(ethereal.collider.area, physical.collider.area)) {
-                                ethereal.collider.area.center.set(1000, -1000);
-                            }
-                        }
-                    }   
-                }
-            }
+    for (let ethereal of ethereals) {
+        for (let physical of physicals) {
+            prevent_overlap(ethereal, physical);
         }
     }
 }
@@ -316,18 +290,20 @@ function prevent_overlap(a, b) {
         if(test.test) {
            let normal = prevent_overlap_AABBs(a, b, test.overlap);
 
-           if (normal !== undefined) {
-            collision_bounce(a, normal, a.cr, b);
-            if (a.air !== undefined && normal.y == -1) {
-                a.air = false;
-                a.transform.velocity.x -= Math.sign(a.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
+            if (a.tag !== "ethereal") {
+                if (normal !== undefined) {
+                    collision_bounce(a, normal, a.cr, b);
+                    if (a.air !== undefined && normal.y == -1) {
+                        a.air = false;
+                        a.transform.velocity.x -= Math.sign(a.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
+                    }
+            
+                    if (b.air !== undefined && normal.y == 1) {
+                        b.air = false;
+                        b.transform.velocity.x -= Math.sign(b.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
+                    }
+                }
             }
-    
-            if (b.air !== undefined && normal.y == 1) {
-                b.air = false;
-                b.transform.velocity.x -= Math.sign(b.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
-            }
-        }
         }
     }
     else if (a.collider.area instanceof Circle && b.collider.area instanceof Circle)
@@ -363,11 +339,13 @@ function prevent_overlap(a, b) {
         if (test.test) {
             let normal = prevent_overlap_circle_AABB(circle, box, test.distance_v, test.sqdist, test.point);
 
-            if (normal !== undefined) {
-                collision_bounce(circle, normal, circle.cr, box);
-                if (circle.air !== undefined && Math.round(normal.y) == -1) {
-                    circle.air = false;
-                    circle.transform.velocity.x -= Math.sign(circle.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
+            if (box.tag !== "ethereal") {
+                if (normal !== undefined) {
+                    collision_bounce(circle, normal, circle.cr, box);
+                    if (circle.air !== undefined && Math.round(normal.y) == -1) {
+                        circle.air = false;
+                        circle.transform.velocity.x -= Math.sign(circle.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
+                    }
                 }
             }
         }
@@ -428,12 +406,21 @@ function prevent_overlap_AABBs(a, b, overlap) {
         scalar_overlap = overlap.compute_magnitude();
     }
 
-    let speed_a = a.transform !== undefined ? a.transform.velocity.dot(a.transform.velocity) : 0;
-    let speed_b = b.transform !== undefined ? b.transform.velocity.dot(b.transform.velocity) : 0;
+    let speed_a;
+    let speed_b;
+    if (a.tag == "ethereal") {
+        speed_a = 1;
+        speed_b = 0;
+    }
+    else {
+        speed_a = a.transform !== undefined ? a.transform.velocity.dot(a.transform.velocity) : 0;
+        speed_b = b.transform !== undefined ? b.transform.velocity.dot(b.transform.velocity) : 0;
+    }
 
     if (speed_a == 0 && speed_b == 0) {
         return;
     }
+
     let ratio_a = speed_a / (speed_a + speed_b);
     let ratio_b = speed_b / (speed_a + speed_b);
 
@@ -470,10 +457,25 @@ function prevent_overlap_circles(a, b, distance_vector) {
 function prevent_overlap_circle_AABB(c, b, distance_vector, sq_dist, point) {
     let circle = c.collider.area;
     let box = b.collider.area;
-    let overlap = circle.radius - Math.sqrt(sq_dist);
 
-    let speed_c = c.transform !== undefined ? c.transform.velocity.dot(c.transform.velocity) : 0;
-    let speed_b = b.transform !== undefined ? b.transform.velocity.dot(b.transform.velocity) : 0;
+    let overlap = 0;
+    if (sq_dist != 0) {
+        overlap = circle.radius - Math.sqrt(sq_dist);
+    }
+    else {
+        distance_vector = distance_vector_to_closest_edge_on_AABB_from_point(point, box);
+        overlap = distance_vector.compute_magnitude() + circle.radius;
+    }
+
+    let speed_c;
+    let speed_b;
+    if (b.tag == "ethereal") {
+        speed_b = 1;
+        speed_c = 0;
+    } else {
+        speed_c = c.transform !== undefined ? c.transform.velocity.dot(c.transform.velocity) : 0;
+        speed_b = b.transform !== undefined ? b.transform.velocity.dot(b.transform.velocity) : 0;
+    }
 
     if (speed_c == 0 && speed_b == 0) {
         return;
@@ -531,6 +533,25 @@ function closest_point_on_AABB_to_point(b, p) {
     q.y = Math.min(q.y, max.y);
 
     return q;
+}
+
+function distance_vector_to_closest_edge_on_AABB_from_point(p, b) {
+    let min = new Vec2(b.center.x - b.half.x, b.center.y - b.half.y);
+    let max = new Vec2(b.center.x + b.half.x, b.center.y + b.half.y);
+
+    let v = new Vec2();
+    v.x = Math.abs(min.x - p.x) <= Math.abs(max.x - p.x) ? min.x : max.x;
+    v.y = Math.abs(min.y - p.y) <= Math.abs(max.y - p.y) ? min.y : max.y;
+
+    let q = p.clone();
+    if (Math.abs(v.x - p.x) <= Math.abs(v.y - p.y)) {
+        q.x = v.x;
+    }
+    else {
+        q.y = v.y;
+    }
+
+    return Vec2.diff(q, p);
 }
 
 function bounce(entity, normal, cr, impact_entity) {
