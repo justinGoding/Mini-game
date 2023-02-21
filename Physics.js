@@ -225,7 +225,7 @@ function ethereal_collisions(entities) {
                 ethereal.transform.pos.x = ethereal.prev_pos.x;
 
                 if (test_overlap(ethereal.collider.area, physical.collider.area)) {
-                    prevent_overlap(ethereal, physical);
+                    ethereal.collider.area.center.add(Vec2.scale(physical.transform.velocity, gameEngine.clockTick));
                 }
             }
         }

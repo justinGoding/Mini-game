@@ -17,7 +17,10 @@ class Ethereal_Block{
         this.collider = new Collider(new AABB(this.transform.pos, block_shape.x, block_shape.y), true, false, false);
 
         this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
-        this.animator = new Animator(this.spritesheet, 0, 0, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
+
+        let sprite_start_x = Math.floor(Math.random() * (32 - (this.collider.area.half.x * 2)));
+        let sprite_start_y = Math.floor(Math.random() * (32 - (this.collider.area.half.y * 2)));
+        this.animator = new Animator(this.spritesheet, sprite_start_x, sprite_start_y, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
     }
 
     movement() {
@@ -60,7 +63,7 @@ class Ethereal_Block{
     }
 
     draw(ctx){
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.2;
         this.animator.drawFrame(gameEngine.clockTick, ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2);
         draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 
             this.collider.area.half.x * 2, this.collider.area.half.y * 2, false, true, 1);
@@ -80,7 +83,7 @@ class Block{
         this.min_speed = 0.3;
         
         this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
-        this.animator = new Animator(this.spritesheet, 0, 0, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
+        this.animator = ethereal.animator;
     }
 
     update(){
