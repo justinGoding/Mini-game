@@ -1,17 +1,23 @@
-const block_shapes={1: {x: 8, y: 8},
-    2: {x: 4, y: 16},
-    3: {x: 16, y: 4} }
+const block_shapes={1: {x: 6, y: 6},
+    2: {x: 6, y: 12},
+    3: {x: 12, y: 6} }
 
 class Ethereal_Block{
     constructor(){
         this.tag = "ethereal";
-        this.transform = new Transform(new Vec2(gameEngine.mouse.x, gameEngine.mouse.y));
+        this.transform = new Transform(new Vec2());
+        if (gameEngine.mouse != null) {
+            this.transform = new Transform(new Vec2(gameEngine.mouse.x, gameEngine.mouse.y));
+        }
         this.cr = 0;
         this.prev_pos = new Vec2();
 
         let key = Math.floor(Math.random() * 3 + 1);
         let block_shape = block_shapes[key];
         this.collider = new Collider(new AABB(this.transform.pos, block_shape.x, block_shape.y), true, false, false);
+
+        this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
+        this.animator = new Animator(this.spritesheet, 0, 0, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
     }
 
     movement() {
@@ -49,12 +55,16 @@ class Ethereal_Block{
         }
     }
     update(){
-        this.movement();
         this.input();
+        this.movement();
     }
 
     draw(ctx){
-        draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2, false, true, 1);
+        ctx.globalAlpha = 0.3;
+        this.animator.drawFrame(gameEngine.clockTick, ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2);
+        draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 
+            this.collider.area.half.x * 2, this.collider.area.half.y * 2, false, true, 1);
+        ctx.globalAlpha = 1.0;
     }
 }
 
@@ -63,14 +73,22 @@ class Block{
         this.tag = "tile";
         this.transform = ethereal.transform;
         this.transform.velocity = Vec2.scale(Vec2.diff(this.transform.pos, this.transform.prev_pos), 1/gameEngine.clockTick);
+        this.movement();
         this.collider = ethereal.collider;
         this.gravity = new Gravity();
         this.max_speed = 100;
         this.min_speed = 0.3;
-        //this.kinematic = new Kinematic(10, this.transform.pos, this.transform.prev_pos, this.transform.velocity, 0, 0.3);
+        
+        this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
+        this.animator = new Animator(this.spritesheet, 0, 0, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
     }
 
     update(){
+        this.movement();
+        this.animation();
+    }
+
+    movement() {
         let speed = Math.abs(this.transform.velocity.x);
         if (speed > this.max_speed) {
             this.transform.velocity.x *= this.max_speed / speed;
@@ -78,9 +96,46 @@ class Block{
         else if (speed < this.min_speed) {
             this.transform.velocity.x = 0;
         }
+        speed = Math.abs(this.transform.velocity.y);
+        if (speed > this.max_speed) {
+            this.transform.velocity.y *= this.max_speed / speed;
+        }
+        else if (speed < this.min_speed) {
+            this.transform.velocity.y = 0;
+        }
     }
 
+
+    animation() {
+        this.animator.width = this.collider.area.half.x;
+        this.animator.height = this.collider.area.half.y;
+    }
+
+
     draw(ctx){
-        draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2, true, true, 1);
+        this.animator.drawFrame(gameEngine.clockTick, ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2);
+        draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 
+            this.collider.area.half.x * 2, this.collider.area.half.y * 2, false, true, 1);
+    }
+}
+
+class Bell {
+    constructor() {
+        this.transform = new Transform(new Vec2(80, 4));
+        this.tag = "bell";
+        this.collider = new Collider(new AABB(this.transform.pos, 4, 4), false, false, false);
+
+        this.spritesheet = ASSET_MANAGER.getAsset("./sprites/bell.png");
+        this.animator = new Animator(this.spritesheet, 0, 0, 16, 16, 1, 1, true);
+    }
+
+    update() {}
+
+    activate() {
+        gameEngine.victory = true;
+    }
+
+    draw(ctx) {
+        this.animator.drawFrame(gameEngine.clockTick, ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2);
     }
 }

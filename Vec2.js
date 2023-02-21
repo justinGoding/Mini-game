@@ -40,6 +40,11 @@ class Vec2 {
         return this.x == other.x && this.y == other.y;
     }
 
+    set(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
     compute_distance(other) {
         return Math.sqrt((other.x - this.x) * (other.x - this.x) + (other.y - this.y) * (other.y - this.y));
     }

@@ -16,6 +16,8 @@ class GameEngine {
         this.new_block_time = 1;
         this.has_ethereal = false;
 
+        this.victory = false;
+
         // Information on the input
         this.click = null;
         this.mouse = null;
@@ -35,6 +37,7 @@ class GameEngine {
     };
 
     start() {
+        this.load_level();
         console.log("Started")
         this.running = true;
         const gameLoop = () => {
@@ -115,16 +118,26 @@ class GameEngine {
                     }
                     else if (this.entities[i].collider.area instanceof Circle) {
                         draw_circle(this.ctx, this.entities[i].transform.pos.x, this.entities[i].transform.pos.y,
-                             this.entities[i].collider.area.radius, false, true, 1);
+                            this.entities[i].collider.area.radius, false, true, 1);
                     }
                 }
             }
         }
+        
 
         let fps = Math.round(1 / this.clockTick);
         let text = "fps: " + fps.toString();
         this.ctx.fillText(text, 980, 20);
         this.ctx.stroke();
+
+        if (this.victory == true) {
+            this.win_screen.drawFrame(gameEngine.clockTick, this.ctx, _WALL_PLANE / 2, _GROUND_PLANE / 2, _WALL_PLANE, _GROUND_PLANE);
+            this.running = false;
+        }
+        if (this.entity_map.get("player").length == 0) {
+            this.death_screen.drawFrame(gameEngine.clockTick, this.ctx, _WALL_PLANE / 2, _GROUND_PLANE / 2, _WALL_PLANE, _GROUND_PLANE);
+            this.running = false;
+        }
     };
 
     update() {
@@ -140,7 +153,10 @@ class GameEngine {
 
         for (let i = this.entities.length - 1; i >= 0; --i) {
             if (this.entities[i].removeFromWorld) {
-                this.entity_map.set(this.entities[i].tag, []);
+                if(this.entities[i].tag != undefined){
+                    let index = this.entity_map.get(this.entities[i].tag).indexOf(this.entities[i]);
+                    this.entity_map.get(this.entities[i].tag).splice(index, 1);
+                }
                 this.entities.splice(i, 1);
             }
         }
@@ -151,7 +167,9 @@ class GameEngine {
 
     loop() {
         this.clockTick = this.timer.tick();
-        this.update();
+        if (this.running) {
+            this.update();
+        }
         this.draw();
 
         this.click = null;
@@ -163,6 +181,27 @@ class GameEngine {
             this.addEntity(new Ethereal_Block());
             this.has_ethereal = true;
         }
+    }
+
+    load_level() {
+        this.player = new Penguin();
+        gameEngine.addEntity(this.player);
+
+        this.bell = new Bell();
+        this.addEntity(this.bell);
+
+        let start_block = new Block(new Ethereal_Block());
+        start_block.collider.area.half.x = 12;
+        start_block.collider.area.half.y = 12;
+        start_block.transform.pos.x = 16;
+        start_block.transform.pos.y = _GROUND_PLANE - 6;
+        start_block.transform.velocity.set(0, 0);
+        this.addEntity(start_block);
+
+        this.win_spritesheet = ASSET_MANAGER.getAsset("./sprites/win_screen.png");
+        this.death_spritesheet = ASSET_MANAGER.getAsset("./sprites/death.png");
+        this.win_screen = new Animator(this.win_spritesheet, 0, 0, 640, 512, 1, 1, true);
+        this.death_screen = new Animator(this.death_spritesheet, 0, 0, 640, 512, 1, 1, true);
     }
 
 };

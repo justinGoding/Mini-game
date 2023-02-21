@@ -2,6 +2,7 @@ const _GRAVITY = 9.8;
 const _GROUND_PLANE = 128;
 const _WALL_PLANE = 160;
 const _FRICTION = 100;
+const _MELT_RATE = 0.6;
 
 function physics_test_init() {
     let units = [];
@@ -39,6 +40,7 @@ function physics(entities) {
     character_tile_collisions(entities);
     tile_tile_collisions(entities);
     ethereal_collisions(entities);
+    player_bell_collisions(entities);
 }
 
 
@@ -97,6 +99,16 @@ function border_collisions(movement_map) {
                     if (entity.transform !== undefined) {
                         entity.transform.velocity.x -= Math.sign(entity.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
                     }
+
+                    if (entity instanceof Block) {
+                        let melt = _MELT_RATE * gameEngine.clockTick;
+                        entity.collider.area.half.y -= melt;
+                        entity.collider.area.center.y += melt + 0.001;
+
+                        if (entity.collider.area.half.y < 0.2) {
+                            entity.removeFromWorld = true;
+                        }
+                    }
                 }
 
                 if (collider.center.x + collider.half.x >= _WALL_PLANE) {
@@ -114,6 +126,18 @@ function border_collisions(movement_map) {
                     bounce(entity, new Vec2(0, -1), entity.cr);
                     entity.transform.velocity.x -= Math.sign(entity.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
                     entity.air = false;
+
+                    if (entity instanceof Penguin) {
+                        if(!document.getElementById("debug").checked){
+                            entity.health.current--;
+                            entity.transform.velocity.y = -200;
+                            entity.gravity.velocity = 0;
+                            entity.invincible = new Invincible();
+                            if (entity.health.current <= 0) {
+                                entity.removeFromWorld = true;
+                            }
+                        }
+                    }
                 }
 
                 if (collider.center.x + collider.radius >= _WALL_PLANE) {
@@ -199,11 +223,21 @@ function ethereal_collisions(entities) {
                 }
 
                 ethereal.transform.pos.x = ethereal.prev_pos.x;
+
+                if (test_overlap(ethereal.collider.area, physical.collider.area)) {
+                    prevent_overlap(ethereal, physical);
+                }
             }
         }
     }
 }
 
+
+function player_bell_collisions(entities) {
+    if (test_overlap(gameEngine.player.collider.area, gameEngine.bell.collider.area)) {
+        gameEngine.bell.activate();
+    }
+}
 
 // Checks for overlap between two Entities a and b and returns a boolean
 function test_overlap(a, b) {
@@ -296,12 +330,11 @@ function prevent_overlap(a, b) {
             let normal = prevent_overlap_circles(a, b, test.distance);
 
             if (normal !== undefined) {
-                bounce(a, normal, a.cr);
-                if (a.grounded !== undefined && Math.round(normal.y) == -1) {
+                collision_bounce(a, normal, a.cr, b);
+                if (a.air !== undefined && Math.round(normal.y) == -1) {
                     a.air = false;
                 }
-                bounce(b, Vec2.scale(normal, -1), b.cr);
-                if (b.grounded !== undefined && Math.round(normal.y) == 1) {
+                if (b.air !== undefined && Math.round(normal.y) == 1) {
                     b.air = false;
                 }
             }
@@ -324,8 +357,8 @@ function prevent_overlap(a, b) {
             let normal = prevent_overlap_circle_AABB(circle, box, test.distance_v, test.sqdist, test.point);
 
             if (normal !== undefined) {
-                bounce(circle, normal, circle.cr);
-                if (circle.grounded !== undefined && Math.round(normal.y) == -1) {
+                collision_bounce(circle, normal, circle.cr, box);
+                if (circle.air !== undefined && Math.round(normal.y) == -1) {
                     circle.air = false;
                     circle.transform.velocity.x -= Math.sign(circle.transform.velocity.x) * _FRICTION * gameEngine.clockTick;
                 }
@@ -522,13 +555,15 @@ function collision_bounce(entity, normal, cr, impact_entity) {
     let mass2 = impact_entity.mass !== undefined ? impact_entity.mass : 1;
     let relative_velocity = Vec2.diff(entity.transform.velocity, impact_entity.transform.velocity);
 
-    if (relative_velocity.x > 0 && relative_velocity.y > 0) { return; }
-    
-    let j = ( -(1+cr) * (relative_velocity.dot(normal)) ) / ( (normal.dot(normal)) * (1 / mass1 + 1 / mass2) );
+    let vrn = relative_velocity.dot(normal);
+
+    if (vrn > 0) { return; }
+
+    let j = ( -(1+cr) * (vrn) ) / ( (normal.dot(normal)) * (1 / mass1 + 1 / mass2) );
 
     let impulse = Vec2.scale(normal, j / mass1);
 
-    if (impulse.x < 0.5 && impulse.y < 0.5) { return; }
+    if (Math.abs(impulse.x) < 0.5 && Math.abs(impulse.y) < 0.5) { return; }
 
     entity.transform.velocity.add(impulse);
     impact_entity.transform.velocity.minus(impulse);

@@ -1,6 +1,6 @@
 /** Global Parameters Object */
 const params = { 
-    scale : 0
+    scale : 4
 };
 
 /**

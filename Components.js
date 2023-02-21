@@ -53,14 +53,20 @@ class Patrol_AI {
 
 class Invincible{
     // Active = we are invincible
-    constructor(invincibility_duration = 0.15, flicker_duration = 0.1, active = false, inverted = false){
-        Object.assign(this, {invincibility_duration, flicker_duration, active, inverted});
-        this.current_invincibility_duration = invincibility_duration;
-        this.current_flicker_duration = flicker_duration;
+    constructor(duration = 0.5){
+        this.end = gameEngine.timer.gameTime + duration;
+        
     }
 
 }
 
+function update_invincibility(entity) {
+    if(entity.invincible !== undefined){
+        if (gameEngine.timer.gameTime >= entity.invincible.end) {
+            entity.invincible = undefined;
+        }
+    }
+}
 
 class Gravity {
     constructor() {
