@@ -1,4 +1,4 @@
-const _GRAVITY = 9.8;
+const _GRAVITY = 280;
 const _GROUND_PLANE = 128;
 const _WALL_PLANE = 160;
 const _FRICTION = 100;
@@ -54,8 +54,9 @@ function update_pos() {
 
             if (entity.gravity !== undefined) {
 
-                entity.gravity.velocity += _GRAVITY * gameEngine.clockTick;
-                entity.transform.velocity.y += entity.gravity.velocity;
+                // entity.gravity.velocity += _GRAVITY * gameEngine.clockTick;
+                // entity.transform.velocity.y += entity.gravity.velocity;
+                entity.transform.velocity.y += _GRAVITY * gameEngine.clockTick;
 
             }
 
@@ -130,7 +131,7 @@ function border_collisions(movement_map) {
                     if (entity instanceof Penguin) {
                         if(!document.getElementById("debug").checked){
                             entity.health.current--;
-                            entity.transform.velocity.y = -200;
+                            entity.transform.velocity.y = -160;
                             entity.gravity.velocity = 0;
                             entity.invincible = new Invincible();
                             if (entity.health.current <= 0) {

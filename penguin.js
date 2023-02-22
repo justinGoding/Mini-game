@@ -95,7 +95,7 @@ class Penguin{
 
         if(this.game.keys[" "] && !this.air){
             this.air = true;
-            this.transform.velocity.y = -100;
+            this.transform.velocity.y = -110;
         }
 
         this.air = true;
