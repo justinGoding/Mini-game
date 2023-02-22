@@ -1,3 +1,4 @@
+const _BLOCK_COOLDOWN = 1;
 const block_shapes={1: {x: 6, y: 6},
     2: {x: 6, y: 12},
     3: {x: 12, y: 6} }
@@ -54,7 +55,7 @@ class Ethereal_Block{
         if (gameEngine.click) {
             gameEngine.addEntity(new Block(this));
             this.removeFromWorld = true;
-            gameEngine.new_block_time = gameEngine.timer.gameTime + 3;
+            gameEngine.new_block_time = gameEngine.timer.gameTime + _BLOCK_COOLDOWN;
             gameEngine.has_ethereal = false;
         }
     }

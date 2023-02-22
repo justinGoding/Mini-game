@@ -2,7 +2,7 @@ const _GRAVITY = 280;
 const _GROUND_PLANE = 128;
 const _WALL_PLANE = 160;
 const _FRICTION = 100;
-const _MELT_RATE = 0.6;
+const _MELT_RATE = 1.5;
 
 function physics_test_init() {
     let units = [];
