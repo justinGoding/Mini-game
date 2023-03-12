@@ -13,16 +13,17 @@
     <script type="text/javascript" src="./Vec2.js"></script>
     <script type="text/javascript" src="./Components.js"></script>
     <script type="text/javascript" src="./penguin.js"></script>
+    <script type="text/javascript" src="./cannon.js"></script>
     <script type="text/javascript" src="./Colliders.js"></script>
     <script type="text/javascript" src="./Physics.js"></script>
     <script type="text/javascript" src="./Animator.js"></script>
     <script type="text/javascript" src="./main.js"></script>
 </head>
-<body>
-    <canvas id="gameWorld" width="640" height="512" style="background: white; border: 1px solid black" tabindex="0" autofocus></canvas>
+<body style="display:grid; place-items:center; height:100vh">
+    <canvas id="gameWorld" width="1024" height="512" style="background: white; border: 1px solid black" tabindex="0" autofocus></canvas>
     <div>
         <br />
-        <input type="checkbox" id="debug"> Debug <input type="checkbox" id="mute"> Mute <input type="range" id="volume" min="0" max="1" value="0.1" step="0.05"> Volume
+        <input type="checkbox" id="debug"> Debug
     </div>
     <div>
         <button id="reset" type="button">Reset</button>

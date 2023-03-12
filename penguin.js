@@ -26,6 +26,7 @@ class Penguin{
         this.max_speed = 100;
         this.min_speed = .3;
         this.cr = 0;
+        this.mass = 5;
 
         // Flag variables
         this.air = true;
@@ -78,12 +79,6 @@ class Penguin{
         else if (this.game.keys["d"]) {
             this.transform.velocity.x += this.acceleration * gameEngine.clockTick;
         }
-        if (this.game.keys["w"]) {
-            this.transform.velocity.y -= this.acceleration * gameEngine.clockTick;
-        }
-        else if (this.game.keys["s"]) {
-            this.transform.velocity.y += this.acceleration * gameEngine.clockTick;
-        }
 
         let speed = Math.abs(this.transform.velocity.x);
         if (speed > this.max_speed) {
@@ -95,7 +90,7 @@ class Penguin{
 
         if(this.game.keys[" "] && !this.air){
             this.air = true;
-            this.transform.velocity.y = -110;
+            this.transform.velocity.y = -105;
         }
 
         this.air = true;

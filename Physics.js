@@ -1,8 +1,9 @@
 const _GRAVITY = 280;
 const _GROUND_PLANE = 128;
 const _WALL_PLANE = 160;
+const _CANNON_BOUNDS = 256;
 const _FRICTION = 100;
-const _MELT_RATE = 1.5;
+const _MELT_RATE = 0.8;
 
 function physics_test_init() {
     let units = [];
@@ -52,12 +53,8 @@ function update_pos() {
         if (entity.transform !== undefined) {
             entity.transform.prev_pos = entity.transform.pos.clone();
 
-            if (entity.gravity !== undefined) {
-
-                // entity.gravity.velocity += _GRAVITY * gameEngine.clockTick;
-                // entity.transform.velocity.y += entity.gravity.velocity;
+            if (entity.gravity) {
                 entity.transform.velocity.y += _GRAVITY * gameEngine.clockTick;
-
             }
 
             if (entity.transform.velocity.x != 0.0 || entity.transform.velocity.y != 0.0) {
@@ -141,7 +138,7 @@ function border_collisions(movement_map) {
                     }
                 }
 
-                if (collider.center.x + collider.radius >= _WALL_PLANE) {
+                if (collider.center.x + collider.radius >= _WALL_PLANE && !(entity instanceof Cannonball)) {
                     collider.center.x = _WALL_PLANE - collider.radius;
                     bounce(entity, new Vec2(-1, 0), entity.cr);
                 } 
@@ -209,7 +206,28 @@ function ethereal_collisions(entities) {
 
     for (let ethereal of ethereals) {
         for (let physical of physicals) {
-            prevent_overlap(ethereal, physical);
+            let is_overlap = prevent_overlap(ethereal, physical);
+
+            if (!is_overlap && physical.tag == "player") {
+                if (ethereal.transform.pos.y > physical.transform.pos.y) {
+
+                    let widths = ethereal.collider.area.half.x + physical.collider.area.radius;
+                    let distance = Math.abs(ethereal.transform.pos.x - physical.transform.pos.x);
+                    let overlap = distance - widths;
+                    if (overlap <= 0) {
+                        if (ethereal.transform.pos.x < physical.transform.pos.x) {
+                            ethereal.transform.pos.x += overlap - 2;
+                        }
+                        else {
+                            ethereal.transform.pos.x -= overlap - 2;
+                        }
+                    }
+                }
+            }
+
+            if (is_overlap) {
+                ethereal.invalid = true;
+            }
         }
     }
 }
@@ -285,7 +303,7 @@ function test_point_inside(p, a) {
 
 // Prevents overlap between two Entities a and b
 function prevent_overlap(a, b) {
-    let test;
+    let test = {test: false};
     if (a.collider.area instanceof AABB && b.collider.area instanceof AABB) {
         test = test_AABBs(a.collider.area, b.collider.area);
         if(test.test) {
@@ -336,7 +354,14 @@ function prevent_overlap(a, b) {
             box = a;
         }
 
-        test = test_Circle_AABB(circle.collider.area, box.collider.area);
+        if (circle.tag == "player" && box.tag == "ethereal") {
+            let collider = new Circle(circle.collider.area.center, circle.collider.area.radius + 1);
+            test = test_Circle_AABB(collider, box.collider.area);
+        }
+        else {
+            test = test_Circle_AABB(circle.collider.area, box.collider.area);
+        }
+
         if (test.test) {
             let normal = prevent_overlap_circle_AABB(circle, box, test.distance_v, test.sqdist, test.point);
 
@@ -456,7 +481,15 @@ function prevent_overlap_circles(a, b, distance_vector) {
 }
 
 function prevent_overlap_circle_AABB(c, b, distance_vector, sq_dist, point) {
-    let circle = c.collider.area;
+    let circle; 
+
+    if (c.tag == "player" && b.tag == "ethereal") {
+        circle = new Circle(c.collider.area.center, c.collider.area.radius + 1);
+    }
+    else{
+        circle = c.collider.area;
+    }
+
     let box = b.collider.area;
 
     let overlap = 0;

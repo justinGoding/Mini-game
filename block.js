@@ -1,4 +1,4 @@
-const _BLOCK_COOLDOWN = 1;
+const _BLOCK_COOLDOWN = .8;
 const block_shapes={1: {x: 6, y: 6},
     2: {x: 6, y: 12},
     3: {x: 12, y: 6} }
@@ -14,15 +14,18 @@ class Ethereal_Block{
         this.mass = 0.0000001
         this.prev_pos = new Vec2();
 
-        let key = Math.floor(Math.random() * 3 + 1);
-        let block_shape = block_shapes[key];
+        this.key = Math.floor(Math.random() * 3 + 1);
+        let block_shape = block_shapes[this.key];
         this.collider = new Collider(new AABB(this.transform.pos, block_shape.x, block_shape.y), true, false, false);
 
-        this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
+        this.valid_spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
+        this.invalid_spritesheet = ASSET_MANAGER.getAsset("./sprites/invalid_ice.png");
 
         let sprite_start_x = Math.floor(Math.random() * (32 - (this.collider.area.half.x * 2)));
         let sprite_start_y = Math.floor(Math.random() * (32 - (this.collider.area.half.y * 2)));
-        this.animator = new Animator(this.spritesheet, sprite_start_x, sprite_start_y, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
+        this.animator = new Animator(this.valid_spritesheet, sprite_start_x, sprite_start_y, this.collider.area.half.x * 2, this.collider.area.half.y * 2, 1, 1, true);
+
+        this.invalid = false;
     }
 
     movement() {
@@ -48,24 +51,34 @@ class Ethereal_Block{
         {
             pos.x = collider.half.x;
         }
- 
     }
 
     input() {
-        if (gameEngine.click) {
-            gameEngine.addEntity(new Block(this));
+        if (gameEngine.click && !this.invalid) {
+            let mass = 5;
+            if (this.key != 1) { mass = 10; }
+
+            gameEngine.addEntity(new Block(this, mass));
             this.removeFromWorld = true;
             gameEngine.new_block_time = gameEngine.timer.gameTime + _BLOCK_COOLDOWN;
             gameEngine.has_ethereal = false;
         }
     }
     update(){
-        this.movement();
         this.input();
+        this.movement();
+        this.invalid = false;
     }
 
     draw(ctx){
         ctx.globalAlpha = 0.2;
+
+        let spritesheet = this.valid_spritesheet;
+        if (this.invalid) {
+            spritesheet = this.invalid_spritesheet;
+        }
+
+        this.animator.spritesheet = spritesheet;
         this.animator.drawFrame(gameEngine.clockTick, ctx, this.transform.pos.x, this.transform.pos.y, this.collider.area.half.x * 2, this.collider.area.half.y * 2);
         draw_rect(ctx, this.transform.pos.x, this.transform.pos.y, 
             this.collider.area.half.x * 2, this.collider.area.half.y * 2, false, true, 1);
@@ -74,7 +87,7 @@ class Ethereal_Block{
 }
 
 class Block{
-    constructor(ethereal){
+    constructor(ethereal, mass){
         this.tag = "tile";
         this.transform = ethereal.transform;
         this.transform.velocity = Vec2.scale(Vec2.diff(this.transform.pos, ethereal.prev_pos), 1/gameEngine.clockTick);
@@ -83,6 +96,7 @@ class Block{
         this.gravity = new Gravity();
         this.max_speed = 300;
         this.min_speed = 0.3;
+        this.mass = mass;
         
         this.spritesheet = ASSET_MANAGER.getAsset("./sprites/ice.png");
         this.animator = ethereal.animator;

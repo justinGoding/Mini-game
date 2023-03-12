@@ -32,11 +32,11 @@ class Animator {
     {
         ctx.save();
 
-        ctx.translate(x, y);
+        ctx.translate(x * params.scale, y * params.scale);
 
         ctx.rotate(angle);
 
-        this.drawFrame(tick, ctx, -(this.width/2), -(this.height/2))
+        this.drawFrame(tick, ctx, (this.width/2) / params.scale, (this.height/2) / params.scale)
     
         ctx.restore();
     }

@@ -47,6 +47,23 @@ class GameEngine {
         gameLoop();
     };
 
+    reset() {
+        this.entities = [];
+        this.entity_map = new Map([
+            ["player", []],
+            ["tile", []],
+            ["ethereal", []],
+        ]);
+
+        this.timer.gameTime = 0;
+        this.new_block_time = 1;
+        this.has_ethereal = false;
+
+        this.victory = false;
+
+        this.load_level()
+    }
+
     startInput() {
         const getXandY = e => ({
             x: e.clientX - this.ctx.canvas.getBoundingClientRect().left,
@@ -131,11 +148,11 @@ class GameEngine {
         this.ctx.stroke();
 
         if (this.victory == true) {
-            this.win_screen.drawFrame(gameEngine.clockTick, this.ctx, _WALL_PLANE / 2, _GROUND_PLANE / 2, _WALL_PLANE, _GROUND_PLANE);
+            this.win_screen.drawFrame(gameEngine.clockTick, this.ctx, 128, _GROUND_PLANE / 2, 256, _GROUND_PLANE);
             this.running = false;
         }
         if (this.entity_map.get("player").length == 0) {
-            this.death_screen.drawFrame(gameEngine.clockTick, this.ctx, _WALL_PLANE / 2, _GROUND_PLANE / 2, _WALL_PLANE, _GROUND_PLANE);
+            this.death_screen.drawFrame(gameEngine.clockTick, this.ctx, 128, _GROUND_PLANE / 2, 256, _GROUND_PLANE);
             this.running = false;
         }
     };
@@ -198,10 +215,12 @@ class GameEngine {
         start_block.transform.velocity.set(0, 0);
         this.addEntity(start_block);
 
+        this.addEntity(new Cannon());
+
         this.win_spritesheet = ASSET_MANAGER.getAsset("./sprites/win_screen.png");
         this.death_spritesheet = ASSET_MANAGER.getAsset("./sprites/death.png");
-        this.win_screen = new Animator(this.win_spritesheet, 0, 0, 640, 512, 1, 1, true);
-        this.death_screen = new Animator(this.death_spritesheet, 0, 0, 640, 512, 1, 1, true);
+        this.win_screen = new Animator(this.win_spritesheet, 0, 0, 1024, 512, 1, 1, true);
+        this.death_screen = new Animator(this.death_spritesheet, 0, 0, 1024, 512, 1, 1, true);
     }
 
 };
